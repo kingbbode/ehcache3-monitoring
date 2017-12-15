@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://www.ehcache.org/ehcache.xsd"
+         updateCheck="true"
+         monitoring="autodetect"
+         dynamicConfig="true">
+    <diskStore path="java.io.tmpdir" />
+
+    <!--일정 주기로 수집하는 캐시 데이터-->
+    <cache name="Cache1"
+           maxElementsInMemory="200"
+           eternal="false"
+           overflowToDisk="false"
+           transactionalMode="off">
+    </cache>
+
+    <!--스타줌 캐시 데이터-->
+    <cache name="Cache2"
+           maxElementsInMemory="300"
+           eternal="false"
+           overflowToDisk="false"
+           transactionalMode="off"
+           timeToLiveSeconds="3600">
+    </cache>
+
+    <cache name="Cache3"
+           maxElementsInMemory="1000"
+           eternal="false"
+           overflowToDisk="false"
+           transactionalMode="off"
+           timeToLiveSeconds="300">
+    </cache>
+</ehcache>
