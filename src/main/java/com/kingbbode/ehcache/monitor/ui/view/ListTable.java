@@ -1,10 +1,11 @@
 package com.kingbbode.ehcache.monitor.ui.view;
 
 import com.vaadin.navigator.View;
-import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.ui.*;
-import com.vaadin.ui.themes.ValoTheme;
+import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.VerticalLayout;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,24 +14,24 @@ import org.springframework.cache.ehcache.EhCacheCacheManager;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-@SpringView(name = "table")
-@SpringComponent
-public class EhcacheTable extends CustomComponent implements View {
+@SpringView(name = "")
+public class ListTable extends CustomComponent implements View {
 
     @Autowired
-    public EhcacheTable(org.springframework.cache.CacheManager springCacheManager) {
+    public ListTable(org.springframework.cache.CacheManager springCacheManager) {
         CacheManager cacheManager = ((EhCacheCacheManager) springCacheManager).getCacheManager();
         VerticalLayout content = new VerticalLayout();
         setCompositionRoot(content);
         HorizontalLayout titleBar = new HorizontalLayout();
         titleBar.setWidth("100%");
         content.addComponent(titleBar);
+/*
 
         Label title = new Label("Kingbbode Ehcache Monitor");
         title.addStyleNames(ValoTheme.LABEL_BOLD, ValoTheme.LABEL_H1);
         titleBar.addComponent(title);
         titleBar.setExpandRatio(title, 1.0f);
-
+*/
 
         HorizontalLayout container = new HorizontalLayout();
         container.setWidth("100%");
