@@ -1,5 +1,7 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
+import com.vaadin.event.ShortcutAction;
+import com.vaadin.event.ShortcutListener;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
@@ -9,12 +11,16 @@ import com.vaadin.ui.themes.ValoTheme;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by YG-MAC on 2017. 12. 16..
@@ -23,19 +29,25 @@ public class CacheDetailComponent extends CustomComponent implements View {
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+    private CssLayout gridWrapper;
+    private Cache ehcache;
 
     public CacheDetailComponent(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
+        this.gridWrapper = new CssLayout();
+        this.gridWrapper.setSizeFull();
     }
 
     private void init(String name) {
-        Cache ehcache = this.cacheManager.getCache(name);
+        this.ehcache = this.cacheManager.getCache(name);
         VerticalLayout content = new VerticalLayout();
         content.addComponent(createTitleBar());
-        content.addComponent(createCacheInfoGrid(ehcache));
-        content.addComponent(createControlButtons(ehcache));
-        content.addComponent(createDetailGrid(ehcache));
+        content.addComponent(createControlButtons(this.ehcache));
+        content.addComponent(createCacheInfoGrid(this.ehcache));
+        this.gridWrapper.removeAllComponents();
+        this.gridWrapper.addComponent(createDetailGrid(this.ehcache, ""));
+        content.addComponent(this.gridWrapper);
         setSizeFull();
         setCompositionRoot(content);
     }
@@ -56,9 +68,39 @@ public class CacheDetailComponent extends CustomComponent implements View {
             ehcache.flush();
             init(ehcache.getName());
         }));
-        topBar.setWidth("30%");
+        topBar.addComponent(createSearchBox());
+
+        topBar.setWidth("50%");
         //topBar.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
         return topBar;
+    }
+
+    private HorizontalLayout createSearchBox() {
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+        TextField textField = new TextField();
+        textField.addShortcutListener(new ShortcutListener("Enter Keyword",
+                ShortcutAction.KeyCode.ENTER, null) {
+            @Override
+            public void handleAction(Object sender, Object target) {
+                searchAction(textField);
+            }
+        });
+        textField.setWidth("70%");
+        horizontalLayout.addComponent(textField);
+        Button button = new Button(VaadinIcons.SEARCH);
+        button.addClickListener(event -> searchAction(textField));
+        button.setWidth("30%");
+        horizontalLayout.addComponent(button);
+        return horizontalLayout;
+    }
+
+    private void searchAction(TextField textField) {
+        String value = textField.getValue();
+        if(StringUtils.isEmpty(value)) {
+            return;
+        }
+        gridWrapper.removeAllComponents();
+        gridWrapper.addComponent(createDetailGrid(ehcache, value));
     }
 
     private Grid<Cache> createCacheInfoGrid(Cache ehcache) {
@@ -80,7 +122,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
         return grid;
     }
 
-    private Grid<Element> createDetailGrid(Cache ehcache) {
+    private Grid<Element> createDetailGrid(Cache ehcache, String keyword) {
         Grid<Element> grid = new Grid<>();
         grid.addColumn(Element::getObjectKey).setCaption("Name");
         grid.addColumn(Element::getObjectValue).setCaption("Value");
@@ -97,8 +139,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
             });
             return button;
             }, new ComponentRenderer()).setCaption("");
-
-        grid.setItems(ehcache.getAll(ehcache.getKeys()).values());
+        grid.setItems(ehcache.getAll(getKeys(ehcache, keyword)).values());
         grid.setWidth("100%");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         int ehcacheSize = ehcache.getKeys().size();
@@ -106,6 +147,15 @@ public class CacheDetailComponent extends CustomComponent implements View {
             grid.setHeightByRows(ehcacheSize > 10 ? 10 : ehcacheSize);
         }
         return grid;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<?> getKeys(Cache ehcache, String keyword) {
+        return (List<?>) ehcache.getKeys()
+                    .stream()
+                    .filter(o -> o instanceof String )
+                    .filter(o -> ((String)o).contains(keyword))
+                    .collect(Collectors.toList());
     }
 
     private String toPattern(Long time) {

@@ -29,6 +29,7 @@ ext {
 
 dependencies {
 	compile('com.vaadin:vaadin-spring-boot-starter')
+	compile('com.vaadin:vaadin-charts:4.0.1')
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-cache')
 	compile('net.sf.ehcache:ehcache')

@@ -34,9 +34,10 @@ public class Menu extends CssLayout{
         top.setDefaultComponentAlignment(Alignment.MIDDLE_LEFT);
         top.addStyleName(ValoTheme.MENU_TITLE);
         Label title = new Label("EHCACHE MONITOR");
-        title.addStyleName(ValoTheme.LABEL_H2);
+        title.addStyleNames(ValoTheme.LABEL_H3, ValoTheme.LABEL_BOLD);
         title.setSizeUndefined();
-        /*Image image = new Image(null, new ThemeResource("img/table-logo.png"));
+        /*Image image = new Image(null, new
+        ThemeResource("img/table-logo.png"));
         image.setStyleName("logo");
         top.addComponent(image);*/
         top.addComponent(title);
