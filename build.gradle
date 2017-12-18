@@ -4,6 +4,7 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+		jcenter()
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -20,6 +21,7 @@ sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
+	jcenter()
 }
 
 
@@ -29,7 +31,7 @@ ext {
 
 dependencies {
 	compile('com.vaadin:vaadin-spring-boot-starter')
-	compile('com.vaadin:vaadin-charts:4.0.1')
+	compile('com.byteowls:vaadin-chartjs:1.0.0')
 	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.springframework.boot:spring-boot-starter-cache')
 	compile('net.sf.ehcache:ehcache')

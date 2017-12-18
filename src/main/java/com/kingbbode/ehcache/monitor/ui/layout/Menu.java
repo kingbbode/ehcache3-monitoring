@@ -13,7 +13,7 @@ import java.util.Map;
  * Created by YG-MAC on 2017. 12. 16..
  */
 public class Menu extends CssLayout{
-
+    public static final String CACHE_PAMAMETER_KEY = "cache";
     private static final String VALO_MENUITEMS = "valo-menuitems";
     private static final String VALO_MENU_TOGGLE = "valo-menu-toggle";
     private static final String VALO_MENU_VISIBLE = "valo-menu-visible";
@@ -78,7 +78,7 @@ public class Menu extends CssLayout{
      */
     public void addViewButton(final String name, String caption,
                               Resource icon) {
-        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo("detail/cache=" + name));
+        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo("detail/"+ CACHE_PAMAMETER_KEY +"=" + name));
         button.setPrimaryStyleName(ValoTheme.MENU_ITEM);
         button.setIcon(icon);
 
