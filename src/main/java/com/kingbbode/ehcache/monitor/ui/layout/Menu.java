@@ -33,8 +33,8 @@ public class Menu extends CssLayout{
         final HorizontalLayout top = new HorizontalLayout();
         top.setDefaultComponentAlignment(Alignment.MIDDLE_LEFT);
         top.addStyleName(ValoTheme.MENU_TITLE);
-        Label title = new Label("EhCache");
-        title.addStyleName(ValoTheme.LABEL_H3);
+        Label title = new Label("EHCACHE MONITOR");
+        title.addStyleName(ValoTheme.LABEL_H2);
         title.setSizeUndefined();
         /*Image image = new Image(null, new ThemeResource("img/table-logo.png"));
         image.setStyleName("logo");

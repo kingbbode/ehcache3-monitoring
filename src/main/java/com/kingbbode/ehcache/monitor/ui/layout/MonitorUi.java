@@ -44,6 +44,7 @@ public class MonitorUi extends UI implements ViewChangeListener{
         initCacheInfo();
         initNavigator();
         setContent(createLayout());
+        setSizeFull();
     }
 
     private void initStyle() {
@@ -76,6 +77,7 @@ public class MonitorUi extends UI implements ViewChangeListener{
         CssLayout viewContainer = new CssLayout();
         viewContainer.addStyleName("valo-content");
         viewContainer.setSizeFull();
+        viewContainer.setHeight(null);
         this.container =  viewContainer;
     }
 
@@ -85,7 +87,6 @@ public class MonitorUi extends UI implements ViewChangeListener{
 
     private void addCacheInfo(String cacheName) {
         this.menu.addViewButton(cacheName, cacheName, VaadinIcons.MAILBOX);
-        //this.dynamicViewProvider.add(cacheName, new CacheDetailComponent(this.cacheManager.getCache(cacheName), this.springNavigator));
     }
 
     @Override

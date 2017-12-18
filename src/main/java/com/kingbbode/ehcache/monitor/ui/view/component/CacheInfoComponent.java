@@ -2,14 +2,11 @@ package com.kingbbode.ehcache.monitor.ui.view.component;
 
 import com.vaadin.navigator.View;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.Grid;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.*;
+import com.vaadin.ui.themes.ValoTheme;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.ehcache.EhCacheCacheManager;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -25,21 +22,18 @@ public class CacheInfoComponent extends CustomComponent implements View {
     private void init(CacheManager cacheManager) {
         VerticalLayout content = new VerticalLayout();
         content.addComponent(createTitleBar());
-        content.addComponent(createContainer(cacheManager));
+        content.addComponent(createCacheGrid(cacheManager));
         setCompositionRoot(content);
     }
 
     private HorizontalLayout createTitleBar() {
         HorizontalLayout titleBar = new HorizontalLayout();
-        titleBar.setWidth("100%");
-        return titleBar;
-    }
+        Label title = new Label("EHCACHE LIST");
+        titleBar.addComponent(title);
+        titleBar.setExpandRatio(title, 1.0f);
+        title.addStyleNames(ValoTheme.LABEL_H1, ValoTheme.LABEL_BOLD, ValoTheme.LABEL_COLORED);
 
-    private HorizontalLayout createContainer(CacheManager cacheManager) {
-        HorizontalLayout container = new HorizontalLayout();
-        container.setWidth("100%");
-        container.addComponent(createCacheGrid(cacheManager));
-        return container;
+        return titleBar;
     }
 
     private Grid<Cache> createCacheGrid(CacheManager cacheManager) {
@@ -59,6 +53,12 @@ public class CacheInfoComponent extends CustomComponent implements View {
                 .map(cacheManager::getCache)
                 .collect(Collectors.toList()));
         grid.setSizeFull();
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+
+        int cacheSize = cacheManager.getCacheNames().length;
+        if(cacheSize != 0) {
+            grid.setHeightByRows(cacheSize > 10 ? 10 : cacheSize);
+        }
         return grid;
     }
 }

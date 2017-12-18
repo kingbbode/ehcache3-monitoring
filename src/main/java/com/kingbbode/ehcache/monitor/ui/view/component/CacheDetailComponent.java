@@ -1,10 +1,11 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
-import com.vaadin.spring.navigator.SpringNavigator;
 import com.vaadin.ui.*;
 import com.vaadin.ui.renderers.ComponentRenderer;
+import com.vaadin.ui.themes.ValoTheme;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -23,37 +24,40 @@ public class CacheDetailComponent extends CustomComponent implements View {
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private CacheManager cacheManager;
-    private SpringNavigator navigator;
 
-    public CacheDetailComponent(CacheManager cacheManager, SpringNavigator navigator) {
+    public CacheDetailComponent(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
-        this.navigator = navigator;
     }
 
-    protected void init(String name) {
+    private void init(String name) {
         Cache ehcache = this.cacheManager.getCache(name);
         VerticalLayout content = new VerticalLayout();
-        content.addComponent(createTopButtons(ehcache));
-        content.addComponent(createContainer(ehcache));
+        content.addComponent(createTitleBar());
+        content.addComponent(createCacheInfoGrid(ehcache));
+        content.addComponent(createControlButtons(ehcache));
+        content.addComponent(createDetailGrid(ehcache));
+        setSizeFull();
         setCompositionRoot(content);
     }
 
-    private VerticalLayout createContainer(Cache ehcache) {
-        VerticalLayout container = new VerticalLayout();
-        container.setWidth("100%");
-        container.addComponent(createCacheInfoGrid(ehcache));
-        container.addComponent(createDetailGrid(ehcache));
-        return container;
+    private HorizontalLayout createTitleBar() {
+        HorizontalLayout titleBar = new HorizontalLayout();
+        Label title = new Label("EHCACHE DETAIL");
+        titleBar.addComponent(title);
+        titleBar.setExpandRatio(title, 1.0f); // Expand
+        title.addStyleNames(ValoTheme.LABEL_H1, ValoTheme.LABEL_BOLD, ValoTheme.LABEL_COLORED);
+        return titleBar;
     }
 
-    private HorizontalLayout createTopButtons(Cache ehcache) {
+    private HorizontalLayout createControlButtons(Cache ehcache) {
         HorizontalLayout topBar = new HorizontalLayout();
-        topBar.setWidth("100%");
         topBar.addComponent(new Button("Refresh", (Button.ClickListener) event -> init(ehcache.getName())));
         topBar.addComponent(new Button("Flush", (Button.ClickListener) event -> {
             ehcache.flush();
             init(ehcache.getName());
         }));
+        topBar.setWidth("30%");
+        //topBar.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
         return topBar;
     }
 
@@ -71,26 +75,37 @@ public class CacheDetailComponent extends CustomComponent implements View {
         grid.addColumn(cache -> cache.getStatistics().cacheMissNotFoundCount()).setCaption("miss : Not Found");
         grid.setItems(Collections.singletonList(ehcache));
         grid.setWidth("100%");
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+        grid.setHeightByRows(1);
         return grid;
     }
 
     private Grid<Element> createDetailGrid(Cache ehcache) {
-        Grid<Element> elements = new Grid<>();
-        elements.addColumn(Element::getObjectKey).setCaption("Name");
-        elements.addColumn(Element::getObjectValue).setCaption("Value");
-        elements.addColumn(element -> toPattern(element.getCreationTime())).setCaption("Create Time");
-        elements.addColumn(element -> toPattern(element.getLastAccessTime())).setCaption("Access Time");
-        elements.addColumn(element -> toPattern(element.getLastUpdateTime())).setCaption("Update Time");
-        elements.addColumn(Element::getVersion).setCaption("Version");
-        elements.addColumn(Element::getHitCount).setCaption("Hit");
-        elements.addColumn(element -> new Button("remove", (Button.ClickListener) event -> {
-            ehcache.remove(element.getObjectKey());
-            navigator.navigateTo(ehcache.getName());
-        }), new ComponentRenderer()).setCaption("");
+        Grid<Element> grid = new Grid<>();
+        grid.addColumn(Element::getObjectKey).setCaption("Name");
+        grid.addColumn(Element::getObjectValue).setCaption("Value");
+        grid.addColumn(element -> toPattern(element.getCreationTime())).setCaption("Create Time");
+        grid.addColumn(element -> toPattern(element.getLastAccessTime())).setCaption("Access Time");
+        grid.addColumn(element -> toPattern(element.getLastUpdateTime())).setCaption("Update Time");
+        grid.addColumn(Element::getVersion).setCaption("Version");
+        grid.addColumn(Element::getHitCount).setCaption("Hit");
+        grid.addColumn(element -> {
+            Button button = new Button(VaadinIcons.TRASH);
+            button.addClickListener(event -> {
+                ehcache.remove(element.getObjectKey());
+                init(ehcache.getName());
+            });
+            return button;
+            }, new ComponentRenderer()).setCaption("");
 
-        elements.setItems(ehcache.getAll(ehcache.getKeys()).values());
-        elements.setWidth("100%");
-        return elements;
+        grid.setItems(ehcache.getAll(ehcache.getKeys()).values());
+        grid.setWidth("100%");
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+        int ehcacheSize = ehcache.getKeys().size();
+        if(ehcacheSize != 0) {
+            grid.setHeightByRows(ehcacheSize > 10 ? 10 : ehcacheSize);
+        }
+        return grid;
     }
 
     private String toPattern(Long time) {
@@ -100,8 +115,6 @@ public class CacheDetailComponent extends CustomComponent implements View {
     private LocalDateTime toLocalDateTime(Long time) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
     }
-
-
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
