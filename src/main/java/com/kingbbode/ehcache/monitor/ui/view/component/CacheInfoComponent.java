@@ -1,5 +1,6 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
+import com.kingbbode.ehcache.monitor.component.CacheHistoryStore;
 import com.vaadin.navigator.View;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.*;
@@ -9,13 +10,18 @@ import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SpringView(name = "")
 public class CacheInfoComponent extends CustomComponent implements View {
 
+    private final CacheHistoryStore store;
+
     @Autowired
-    public CacheInfoComponent(CacheManager cacheManager) {
+    public CacheInfoComponent(CacheManager cacheManager, CacheHistoryStore store) {
+        this.store = store;
         init(cacheManager);
     }
 
@@ -23,7 +29,24 @@ public class CacheInfoComponent extends CustomComponent implements View {
         VerticalLayout content = new VerticalLayout();
         content.addComponent(createTitleBar());
         content.addComponent(createCacheGrid(cacheManager));
+        content.addComponent(createCacheCharts(cacheManager));
         setCompositionRoot(content);
+    }
+
+    private VerticalLayout createCacheCharts(CacheManager cacheManager) {
+
+        VerticalLayout verticalLayout = new VerticalLayout();
+        List<HorizontalLayout> horizontalLayoutList = IntStream.range(0, cacheManager.getCacheNames().length)
+                .mapToObj(value -> new HorizontalLayout())
+                .collect(Collectors.toList());
+        String[] names = cacheManager.getCacheNames();
+        IntStream.range(0, names.length).forEach(value -> horizontalLayoutList.get(value / 3).addComponent(new CacheLineChart(names[value], this.store.get(names[value]))));
+        horizontalLayoutList.forEach(components -> {
+            verticalLayout.addComponent(components);
+            components.setSizeFull();
+        });
+        verticalLayout.setSizeFull();
+        return verticalLayout;
     }
 
     private HorizontalLayout createTitleBar() {
@@ -56,7 +79,7 @@ public class CacheInfoComponent extends CustomComponent implements View {
         grid.setSelectionMode(Grid.SelectionMode.NONE);
 
         int cacheSize = cacheManager.getCacheNames().length;
-        if(cacheSize != 0) {
+        if (cacheSize != 0) {
             grid.setHeightByRows(cacheSize > 10 ? 10 : cacheSize);
         }
         return grid;

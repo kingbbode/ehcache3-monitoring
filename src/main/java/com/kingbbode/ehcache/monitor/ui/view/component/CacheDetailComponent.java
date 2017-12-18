@@ -1,6 +1,5 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
-import com.kingbbode.ehcache.monitor.ui.layout.Menu;
 import com.vaadin.event.ShortcutAction;
 import com.vaadin.event.ShortcutListener;
 import com.vaadin.icons.VaadinIcons;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
  */
 public class CacheDetailComponent extends CustomComponent implements View {
 
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String SEARCH_DEFAULT = "";
 
     private final CacheManager cacheManager;
@@ -154,7 +153,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
     }
 
     private String toPattern(Long time) {
-        return toLocalDateTime(time).format(formatter);
+        return toLocalDateTime(time).format(FORMATTER);
     }
 
     private LocalDateTime toLocalDateTime(Long time) {
@@ -163,7 +162,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-        String cacheName = event.getParameterMap().getOrDefault(Menu.CACHE_PAMAMETER_KEY, "");
+        String cacheName = event.getParameterMap().getOrDefault(Menu.CACHE_PARAMETER_KEY, "");
         if("".equals(cacheName)) {
             event.getNavigator().navigateTo(cacheName);
             return;

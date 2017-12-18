@@ -2,7 +2,6 @@ package com.kingbbode.ehcache.monitor.ui.view;
 
 import com.kingbbode.ehcache.monitor.ui.view.component.CacheDetailComponent;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.spring.navigator.SpringNavigator;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 

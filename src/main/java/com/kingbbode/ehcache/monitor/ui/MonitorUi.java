@@ -1,5 +1,6 @@
-package com.kingbbode.ehcache.monitor.ui.layout;
+package com.kingbbode.ehcache.monitor.ui;
 
+import com.kingbbode.ehcache.monitor.ui.view.component.Menu;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
 import com.vaadin.icons.VaadinIcons;
