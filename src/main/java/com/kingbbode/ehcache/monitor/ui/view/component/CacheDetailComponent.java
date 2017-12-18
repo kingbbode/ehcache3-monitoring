@@ -1,10 +1,12 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
 import com.vaadin.navigator.View;
+import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.spring.navigator.SpringNavigator;
 import com.vaadin.ui.*;
 import com.vaadin.ui.renderers.ComponentRenderer;
 import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
 import java.time.Instant;
@@ -16,25 +18,46 @@ import java.util.Collections;
 /**
  * Created by YG-MAC on 2017. 12. 16..
  */
-public class DetailTable extends CustomComponent implements View {
+public class CacheDetailComponent extends CustomComponent implements View {
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public DetailTable(Cache ehcache, SpringNavigator navigator) {
+    private CacheManager cacheManager;
+    private SpringNavigator navigator;
+
+    public CacheDetailComponent(CacheManager cacheManager, SpringNavigator navigator) {
+        this.cacheManager = cacheManager;
+        this.navigator = navigator;
+    }
+
+    protected void init(String name) {
+        Cache ehcache = this.cacheManager.getCache(name);
         VerticalLayout content = new VerticalLayout();
+        content.addComponent(createTopButtons(ehcache));
+        content.addComponent(createContainer(ehcache));
         setCompositionRoot(content);
-        HorizontalLayout topBar = new HorizontalLayout();
-        topBar.setWidth("100%");
-        content.addComponent(topBar);
-        topBar.addComponent(new Button("Refresh", (Button.ClickListener) event -> navigator.navigateTo(ehcache.getName())));
-        topBar.addComponent(new Button("Flush", (Button.ClickListener) event -> {
-            ehcache.flush();
-            navigator.navigateTo(ehcache.getName());
-        }));
+    }
+
+    private VerticalLayout createContainer(Cache ehcache) {
         VerticalLayout container = new VerticalLayout();
         container.setWidth("100%");
-        content.addComponent(container);
+        container.addComponent(createCacheInfoGrid(ehcache));
+        container.addComponent(createDetailGrid(ehcache));
+        return container;
+    }
 
+    private HorizontalLayout createTopButtons(Cache ehcache) {
+        HorizontalLayout topBar = new HorizontalLayout();
+        topBar.setWidth("100%");
+        topBar.addComponent(new Button("Refresh", (Button.ClickListener) event -> init(ehcache.getName())));
+        topBar.addComponent(new Button("Flush", (Button.ClickListener) event -> {
+            ehcache.flush();
+            init(ehcache.getName());
+        }));
+        return topBar;
+    }
+
+    private Grid<Cache> createCacheInfoGrid(Cache ehcache) {
         Grid<Cache> grid = new Grid<>();
         grid.addColumn(Cache::getName).setCaption("Name");
         grid.addColumn(cache -> ((Double) (((double) cache.getStatistics().cacheHitCount()) / ((double) (cache.getStatistics().cacheMissCount() + cache.getStatistics().cacheHitCount())) * 100)).intValue() + "%").setCaption("Hit Ratio");
@@ -46,11 +69,12 @@ public class DetailTable extends CustomComponent implements View {
         grid.addColumn(cache -> cache.getStatistics().cacheHitCount()).setCaption("hit");
         grid.addColumn(cache -> cache.getStatistics().cacheMissExpiredCount()).setCaption("miss : Expire");
         grid.addColumn(cache -> cache.getStatistics().cacheMissNotFoundCount()).setCaption("miss : Not Found");
-
         grid.setItems(Collections.singletonList(ehcache));
         grid.setWidth("100%");
-        container.addComponent(grid);
+        return grid;
+    }
 
+    private Grid<Element> createDetailGrid(Cache ehcache) {
         Grid<Element> elements = new Grid<>();
         elements.addColumn(Element::getObjectKey).setCaption("Name");
         elements.addColumn(Element::getObjectValue).setCaption("Value");
@@ -66,7 +90,7 @@ public class DetailTable extends CustomComponent implements View {
 
         elements.setItems(ehcache.getAll(ehcache.getKeys()).values());
         elements.setWidth("100%");
-        container.addComponent(elements);
+        return elements;
     }
 
     private String toPattern(Long time) {
@@ -75,5 +99,17 @@ public class DetailTable extends CustomComponent implements View {
 
     private LocalDateTime toLocalDateTime(Long time) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
+    }
+
+
+
+    @Override
+    public void enter(ViewChangeListener.ViewChangeEvent event) {
+        String cacheName = event.getParameterMap().getOrDefault("cache", "");
+        if("".equals(cacheName)) {
+            event.getNavigator().navigateTo(cacheName);
+            return;
+        }
+        init(cacheName);
     }
 }

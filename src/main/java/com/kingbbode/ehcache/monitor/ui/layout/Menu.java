@@ -3,7 +3,6 @@ package com.kingbbode.ehcache.monitor.ui.layout;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.server.Resource;
-import com.vaadin.spring.navigator.SpringViewProvider;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
 
@@ -78,9 +77,11 @@ public class Menu extends CssLayout{
      */
     public void addViewButton(final String name, String caption,
                               Resource icon) {
-        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo(name));
+        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo("detail/cache=" + name));
         button.setPrimaryStyleName(ValoTheme.MENU_ITEM);
         button.setIcon(icon);
+
+
         menuItemsLayout.addComponent(button);
         viewButtons.put(name, button);
     }

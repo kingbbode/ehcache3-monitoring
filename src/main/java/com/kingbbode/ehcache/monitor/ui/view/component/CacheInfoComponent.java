@@ -1,4 +1,4 @@
-package com.kingbbode.ehcache.monitor.ui.view;
+package com.kingbbode.ehcache.monitor.ui.view.component;
 
 import com.vaadin.navigator.View;
 import com.vaadin.spring.annotation.SpringView;
@@ -15,28 +15,34 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @SpringView(name = "")
-public class ListTable extends CustomComponent implements View {
+public class CacheInfoComponent extends CustomComponent implements View {
 
     @Autowired
-    public ListTable(org.springframework.cache.CacheManager springCacheManager) {
-        CacheManager cacheManager = ((EhCacheCacheManager) springCacheManager).getCacheManager();
+    public CacheInfoComponent(CacheManager cacheManager) {
+        init(cacheManager);
+    }
+
+    private void init(CacheManager cacheManager) {
         VerticalLayout content = new VerticalLayout();
+        content.addComponent(createTitleBar());
+        content.addComponent(createContainer(cacheManager));
         setCompositionRoot(content);
+    }
+
+    private HorizontalLayout createTitleBar() {
         HorizontalLayout titleBar = new HorizontalLayout();
         titleBar.setWidth("100%");
-        content.addComponent(titleBar);
-/*
+        return titleBar;
+    }
 
-        Label title = new Label("Kingbbode Ehcache Monitor");
-        title.addStyleNames(ValoTheme.LABEL_BOLD, ValoTheme.LABEL_H1);
-        titleBar.addComponent(title);
-        titleBar.setExpandRatio(title, 1.0f);
-*/
-
+    private HorizontalLayout createContainer(CacheManager cacheManager) {
         HorizontalLayout container = new HorizontalLayout();
         container.setWidth("100%");
-        content.addComponent(container);
+        container.addComponent(createCacheGrid(cacheManager));
+        return container;
+    }
 
+    private Grid<Cache> createCacheGrid(CacheManager cacheManager) {
         Grid<Cache> grid = new Grid<>();
         grid.addColumn(Cache::getName).setCaption("Name");
         grid.addColumn(cache -> ((Double) (((double) cache.getStatistics().cacheHitCount()) / ((double) (cache.getStatistics().cacheMissCount() + cache.getStatistics().cacheHitCount())) * 100)).intValue() + "%").setCaption("Hit Ratio");
@@ -53,6 +59,6 @@ public class ListTable extends CustomComponent implements View {
                 .map(cacheManager::getCache)
                 .collect(Collectors.toList()));
         grid.setSizeFull();
-        container.addComponent(grid);
+        return grid;
     }
 }

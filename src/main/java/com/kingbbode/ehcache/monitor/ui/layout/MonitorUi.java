@@ -1,8 +1,5 @@
-package com.kingbbode.ehcache.monitor.ui;
+package com.kingbbode.ehcache.monitor.ui.layout;
 
-import com.kingbbode.ehcache.monitor.ui.view.component.DetailTable;
-import com.kingbbode.ehcache.monitor.provider.DynamicViewProvider;
-import com.kingbbode.ehcache.monitor.ui.layout.Menu;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
 import com.vaadin.icons.VaadinIcons;
@@ -29,49 +26,66 @@ public class MonitorUi extends UI implements ViewChangeListener{
 
     private final SpringNavigator springNavigator;
 
-    private final DynamicViewProvider dynamicViewProvider;
-
     private Menu menu;
 
+    private CssLayout container;
+
     @Autowired
-    public MonitorUi(org.springframework.cache.CacheManager cacheManager, SpringNavigator springNavigator, DynamicViewProvider dynamicViewProvider) {
+    public MonitorUi(org.springframework.cache.CacheManager cacheManager, SpringNavigator springNavigator) {
         this.cacheManager = ((EhCacheCacheManager) cacheManager).getCacheManager();
         this.springNavigator = springNavigator;
-        this.dynamicViewProvider = dynamicViewProvider;
-        this.springNavigator.addProvider(this.dynamicViewProvider);
     }
 
     @Override
     protected void init(VaadinRequest request) {
+        initStyle();
+        initMenu();
+        initContainer();
+        initCacheInfo();
+        initNavigator();
+        setContent(createLayout());
+    }
+
+    private void initStyle() {
         addStyleName(ValoTheme.UI_WITH_MENU);
+    }
 
+    private void initNavigator() {
+        this.springNavigator.init(this, this.container);
+        this.springNavigator.addViewChangeListener(this);
+        this.springNavigator.navigateTo("");
+    }
+
+    private HorizontalLayout createLayout() {
         HorizontalLayout layout = new HorizontalLayout();
-        setContent(layout);
-
         layout.setStyleName("main-screen");
+        layout.addComponent(this.menu);
+        layout.addComponent(this.container);
+        layout.setExpandRatio(this.container, 1);
+        layout.setSizeFull();
+        layout.setSpacing(false);
+        return layout;
+    }
 
+    private void initMenu() {
+        this.menu = new Menu(this.springNavigator);
+        this.menu.addViewButton("", "전체", VaadinIcons.LIST);
+    }
+
+    private void initContainer() {
         CssLayout viewContainer = new CssLayout();
         viewContainer.addStyleName("valo-content");
         viewContainer.setSizeFull();
+        this.container =  viewContainer;
+    }
 
-        this.springNavigator.init(this, viewContainer);
-        this.springNavigator.addViewChangeListener(this);
+    private void initCacheInfo() {
+        Arrays.stream(this.cacheManager.getCacheNames()).forEach(this::addCacheInfo);
+    }
 
-        this.menu = new Menu(this.springNavigator);
-        this.menu.addViewButton("", "전체", VaadinIcons.LIST);
-        Arrays.stream(this.cacheManager.getCacheNames()).forEach(cacheName ->
-        {
-            this.menu.addViewButton(cacheName, cacheName, VaadinIcons.MAILBOX);
-            this.dynamicViewProvider.add(cacheName, new DetailTable(this.cacheManager.getCache(cacheName), this.springNavigator));
-        });
-
-
-        layout.addComponent(this.menu);
-        layout.addComponent(viewContainer);
-        layout.setExpandRatio(viewContainer, 1);
-        layout.setSizeFull();
-        layout.setSpacing(false);
-        this.springNavigator.navigateTo("");
+    private void addCacheInfo(String cacheName) {
+        this.menu.addViewButton(cacheName, cacheName, VaadinIcons.MAILBOX);
+        //this.dynamicViewProvider.add(cacheName, new CacheDetailComponent(this.cacheManager.getCache(cacheName), this.springNavigator));
     }
 
     @Override
