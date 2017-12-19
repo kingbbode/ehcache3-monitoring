@@ -115,7 +115,6 @@ public class CacheDetailComponent extends CustomComponent implements View {
     }
 
     private Grid<Element> createDetailGrid() {
-        //Map<Object, Long> hitCounts = RemoteUtils.listRemoteElementHitCount(this.cacheManager, this.ehcache);
         Grid<Element> grid = new Grid<>();
         grid.addColumn(Element::getObjectKey).setCaption("Name");
         grid.addColumn(Element::getObjectValue).setCaption("Value");

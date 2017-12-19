@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Created by YG-MAC on 2017. 12. 16..
  */
-public class Menu extends CssLayout{
+public class Menu extends CssLayout {
     static final String CACHE_PARAMETER_KEY = "cache";
     private static final String VALO_MENUITEMS = "valo-menuitems";
     private static final String VALO_MENU_TOGGLE = "valo-menu-toggle";
@@ -42,8 +42,6 @@ public class Menu extends CssLayout{
         top.addComponent(image);*/
         top.addComponent(title);
         menuPart.addComponent(top);
-
-        // button for toggling the visibility of the menu when on a small screen
         final Button showMenu = new Button("Menu", (Button.ClickListener) event -> {
             if (menuPart.getStyleName().contains(VALO_MENU_VISIBLE)) {
                 menuPart.removeStyleName(VALO_MENU_VISIBLE);
@@ -56,8 +54,6 @@ public class Menu extends CssLayout{
         showMenu.addStyleName(VALO_MENU_TOGGLE);
         showMenu.setIcon(VaadinIcons.MENU);
         menuPart.addComponent(showMenu);
-
-        // container for the navigation buttons, which are added by addView()
         menuItemsLayout = new CssLayout();
         menuItemsLayout.setPrimaryStyleName(VALO_MENUITEMS);
         menuPart.addComponent(menuItemsLayout);
@@ -69,16 +65,13 @@ public class Menu extends CssLayout{
      * Creates a navigation button to the view identified by {@code name} using
      * {@code caption} and {@code icon}.
      *
-     * @param name
-     *            view name
-     * @param caption
-     *            view caption in the menu
-     * @param icon
-     *            view icon in the menu
+     * @param name    view name
+     * @param caption view caption in the menu
+     * @param icon    view icon in the menu
      */
     public void addViewButton(final String name, String caption,
                               Resource icon) {
-        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo("detail/"+ CACHE_PARAMETER_KEY +"=" + name));
+        Button button = new Button(caption, (Button.ClickListener) event -> navigator.navigateTo("detail/" + CACHE_PARAMETER_KEY + "=" + name));
         button.setPrimaryStyleName(ValoTheme.MENU_ITEM);
         button.setIcon(icon);
 
@@ -91,8 +84,7 @@ public class Menu extends CssLayout{
      * Highlights a view navigation button as the currently active view in the
      * menu. This method does not perform the actual navigation.
      *
-     * @param viewName
-     *            the name of the view to show as active
+     * @param viewName the name of the view to show as active
      */
     public void setActiveView(String viewName) {
         for (Button button : viewButtons.values()) {

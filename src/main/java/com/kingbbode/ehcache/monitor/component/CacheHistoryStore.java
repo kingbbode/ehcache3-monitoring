@@ -1,7 +1,6 @@
 package com.kingbbode.ehcache.monitor.component;
 
 import com.kingbbode.ehcache.monitor.utils.DateTimeUtils;
-import com.kingbbode.ehcache.monitor.utils.RemoteUtils;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,24 +32,13 @@ public class CacheHistoryStore {
 
     @Scheduled(cron = "0 * * * * *")
     public void fetch() {
-        Long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         Arrays.stream(this.cacheManager.getCacheNames())
                 .map(this.cacheManager::getCache)
-                .forEach(cache -> saveCache(cache, timestamp));
+                .forEach(this::saveCache);
     }
 
-    private void saveCache(Cache cache, Long timestamp) {
+    private void saveCache(Cache cache) {
         saveLocalCache(cache);
-        //saveRemoteCache(cache, timestamp);
-    }
-
-    private void saveRemoteCache(Cache cache, Long timestamp) {
-        Map<String, Timestamped<Long>> map = this.storage.getOrDefault(cache.getName(), new HashMap<>());
-        String latestKey = DateTimeUtils.ofPattern(timestamp, FORMATTER_FOR_GROUPING);
-        TimestampedWrap latest = new TimestampedWrap(map.getOrDefault(latestKey, new TimestampedWrap(timestamp)));
-        latest.add(RemoteUtils.sumRemoteElementHitCount(cacheManager, cache));
-        map.put(latestKey, latest);
-        this.storage.put(cache.getName(), map);
     }
 
     private void saveLocalCache(Cache cache) {
@@ -67,7 +55,7 @@ public class CacheHistoryStore {
                     Map<String, Timestamped<Long>> map = this.storage.getOrDefault(cache.getName(), new HashMap<>());
                     map.put(DateTimeUtils.ofPattern(cacheHistory.getTimestamp(), FORMATTER_FOR_GROUPING), cacheHistory);
                     if (map.size() > 3) {
-                        String removeKey = map.entrySet().stream().max(Comparator.comparingLong(o -> o.getValue().getTimestamp())).map(Map.Entry::getKey).orElse("");
+                        String removeKey = map.entrySet().stream().min(Comparator.comparingLong(o -> o.getValue().getTimestamp())).map(Map.Entry::getKey).orElse("");
                         map.remove(removeKey);
                     }
                     this.storage.put(cache.getName(), map);
@@ -79,35 +67,5 @@ public class CacheHistoryStore {
                 .values().stream()
                 .sorted(Comparator.comparingLong(Timestamped::getTimestamp))
                 .collect(Collectors.toList());
-    }
-
-    private class TimestampedWrap implements Timestamped<Long> {
-
-        TimestampedWrap(Long timestamp) {
-            this.sample = 0L;
-            this.timestamp = timestamp;
-        }
-
-        TimestampedWrap(Timestamped<Long> timestamped) {
-            this.sample = timestamped.getSample();
-            this.timestamp = timestamped.getTimestamp();
-        }
-
-        private Long sample;
-        private Long timestamp;
-
-        @Override
-        public Long getSample() {
-            return sample;
-        }
-
-        @Override
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        void add(Long sample) {
-            this.sample += sample;
-        }
     }
 }

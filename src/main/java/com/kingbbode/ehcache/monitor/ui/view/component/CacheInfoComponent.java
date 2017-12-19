@@ -29,7 +29,10 @@ public class CacheInfoComponent extends CustomComponent implements View {
         VerticalLayout content = new VerticalLayout();
         content.addComponent(createTitleBar());
         content.addComponent(createCacheGrid(cacheManager));
-        content.addComponent(createCacheCharts(cacheManager));
+        Panel panel = new Panel();
+        panel.setSizeFull();
+        panel.setContent(createCacheCharts(cacheManager));
+        content.addComponent(panel);
         setCompositionRoot(content);
     }
 
