@@ -1,11 +1,11 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
 import com.kingbbode.ehcache.monitor.component.CacheHistoryStore;
+import com.kingbbode.ehcache.monitor.item.CacheCustom;
 import com.vaadin.navigator.View;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
-import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -40,7 +40,7 @@ public class CacheInfoComponent extends CustomComponent implements View {
                 .mapToObj(value -> new HorizontalLayout())
                 .collect(Collectors.toList());
         String[] names = cacheManager.getCacheNames();
-        IntStream.range(0, names.length).forEach(value -> horizontalLayoutList.get(value / 3).addComponent(new CacheLineChart(names[value], this.store.get(names[value]))));
+        IntStream.range(0, names.length).forEach(value -> horizontalLayoutList.get(value / 3).addComponent(new CacheLineChart(names[value], this.store.getHistory(names[value]))));
         horizontalLayoutList.forEach(components -> {
             verticalLayout.addComponent(components);
             components.setSizeFull();
@@ -59,26 +59,24 @@ public class CacheInfoComponent extends CustomComponent implements View {
         return titleBar;
     }
 
-    private Grid<Cache> createCacheGrid(CacheManager cacheManager) {
-        Grid<Cache> grid = new Grid<>();
-        grid.addColumn(Cache::getName).setCaption("Name");
-        grid.addColumn(cache -> ((Double) (((double) cache.getStatistics().cacheHitCount()) / ((double) (cache.getStatistics().cacheMissCount() + cache.getStatistics().cacheHitCount())) * 100)).intValue() + "%").setCaption("Hit Ratio");
-        grid.addColumn(cache -> cache.getCacheConfiguration().getMaxEntriesInCache()).setCaption("Max Size");
-        grid.addColumn(Cache::getSize).setCaption("Size");
-        grid.addColumn(Cache::getStatus).setCaption("Status");
-        grid.addColumn(cache -> cache.getCacheConfiguration().getTimeToIdleSeconds()).setCaption("TTldle(s)");
-        grid.addColumn(cache -> cache.getCacheConfiguration().getTimeToLiveSeconds()).setCaption("TTLive(s)");
-        grid.addColumn(cache -> cache.getStatistics().cacheHitCount()).setCaption("hit");
-        grid.addColumn(cache -> cache.getStatistics().cacheMissExpiredCount()).setCaption("miss : Expire");
-        grid.addColumn(cache -> cache.getStatistics().cacheMissNotFoundCount()).setCaption("miss : Not Found");
-
-        grid.setItems(Arrays.stream(cacheManager.getCacheNames())
-                .map(cacheManager::getCache)
-                .collect(Collectors.toList()));
+    private Grid<CacheCustom> createCacheGrid(CacheManager cacheManager) {
+        List<CacheCustom> items = this.store.getAll(Arrays.asList(cacheManager.getCacheNames()));
+        Grid<CacheCustom> grid = new Grid<>();
+        grid.addColumn(CacheCustom::getName).setCaption("Name");
+        grid.addColumn(cache -> cache.getHitRatio() + "%").setCaption("Hit Ratio");
+        grid.addColumn(CacheCustom::getMaxSize).setCaption("Max Size");
+        grid.addColumn(CacheCustom::getSize).setCaption("Size");
+        grid.addColumn(CacheCustom::getStatus).setCaption("Status");
+        grid.addColumn(CacheCustom::getTimeToIdleSeconds).setCaption("TTldle(s)");
+        grid.addColumn(CacheCustom::getTimeToLiveSeconds).setCaption("TTLive(s)");
+        grid.addColumn(CacheCustom::getHitCount).setCaption("hit");
+        grid.addColumn(CacheCustom::getMissExpiredCount).setCaption("miss : Expire");
+        grid.addColumn(CacheCustom::getMissNotFoundCount).setCaption("miss : Not Found");
+        grid.setItems(items);
         grid.setSizeFull();
         grid.setSelectionMode(Grid.SelectionMode.NONE);
 
-        int cacheSize = cacheManager.getCacheNames().length;
+        int cacheSize = items.size();
         if (cacheSize != 0) {
             grid.setHeightByRows(cacheSize > 10 ? 10 : cacheSize);
         }

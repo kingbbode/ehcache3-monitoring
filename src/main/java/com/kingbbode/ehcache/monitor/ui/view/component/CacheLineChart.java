@@ -6,7 +6,7 @@ import com.byteowls.vaadin.chartjs.config.LineChartConfig;
 import com.byteowls.vaadin.chartjs.data.Dataset;
 import com.byteowls.vaadin.chartjs.data.LineDataset;
 import com.byteowls.vaadin.chartjs.options.Position;
-import com.kingbbode.ehcache.monitor.dto.CacheHistory;
+import com.kingbbode.ehcache.monitor.item.CacheCustomHistory;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -22,17 +22,17 @@ public class CacheLineChart extends ChartJs {
 
     private static DateTimeFormatter FORMATTER_FOR_DISPLAY = DateTimeFormatter.ofPattern("HH:mm");
 
-    public CacheLineChart(String name, List<CacheHistory> history) {
+    public CacheLineChart(String name, List<CacheCustomHistory> history) {
         super();
         configure(createConfig(name, history));
         setJsLoggingEnabled(true);
     }
 
-    private ChartConfig createConfig(String name, List<CacheHistory> history) {
+    private ChartConfig createConfig(String name, List<CacheCustomHistory> history) {
         LineChartConfig chartConfig = new LineChartConfig();
         chartConfig
                 .data()
-                .labels(history.stream().map(CacheHistory::getTimestamp).map(this::ofPatternForDisplay).toArray(String[]::new))
+                .labels(history.stream().map(CacheCustomHistory::getTimestamp).map(this::ofPatternForDisplay).toArray(String[]::new))
                 .addDataset(new LineDataset().type().label("hit").backgroundColor("rgba(151,187,205,0.5)").borderColor("white").borderWidth(2))
                 .and();
 
@@ -49,7 +49,7 @@ public class CacheLineChart extends ChartJs {
         for (Dataset<?, ?> ds : chartConfig.data().getDatasets()) {
             if (ds instanceof LineDataset) {
                 LineDataset lds = (LineDataset) ds;
-                lds.dataAsList(history.stream().limit(3).map(CacheHistory::getValue).map(Double::valueOf).collect(Collectors.toList()));
+                lds.dataAsList(history.stream().limit(3).map(CacheCustomHistory::getValue).map(Double::valueOf).collect(Collectors.toList()));
             }
         }
         return chartConfig;

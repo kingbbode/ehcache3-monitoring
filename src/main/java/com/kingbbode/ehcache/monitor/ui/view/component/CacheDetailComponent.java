@@ -78,7 +78,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
         HorizontalLayout controlBar = new HorizontalLayout();
         controlBar.addComponent(new Button("Refresh", (Button.ClickListener) event -> refresh()));
         controlBar.addComponent(new Button("Flush", (Button.ClickListener) event -> {
-            cache.flush();
+            cache.removeAll();
             refresh();
         }));
         controlBar.addComponent(createSearchBox());

@@ -1,4 +1,4 @@
-package com.kingbbode.ehcache.monitor.dto;
+package com.kingbbode.ehcache.monitor.item;
 
 import lombok.Getter;
 import org.terracotta.statistics.archive.Timestamped;
@@ -7,12 +7,12 @@ import org.terracotta.statistics.archive.Timestamped;
  * Created by YG-MAC on 2017. 12. 18..
  */
 @Getter
-public class CacheHistory implements Comparable<CacheHistory> {
+public class CacheCustomHistory implements Comparable<CacheCustomHistory> {
 
     private Long value;
     private Long timestamp;
 
-    public CacheHistory(Timestamped<Long> timestamped) {
+    public CacheCustomHistory(Timestamped<Long> timestamped) {
         this.value = timestamped.getSample();
         this.timestamp = timestamped.getTimestamp();
     }
@@ -23,7 +23,7 @@ public class CacheHistory implements Comparable<CacheHistory> {
         }*/
 
     @Override
-    public int compareTo(CacheHistory o) {
+    public int compareTo(CacheCustomHistory o) {
         return Long.compare(this.timestamp, o.timestamp);
     }
 }

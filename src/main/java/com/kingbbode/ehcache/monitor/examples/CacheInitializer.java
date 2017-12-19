@@ -21,7 +21,7 @@ public class CacheInitializer {
         this.cache2 = cache2;
         this.cache3 = cache3;
     }
-    
+
     @Scheduled(fixedDelay = 5000)
     public void init() {
         IntStream.range(0, 100)
