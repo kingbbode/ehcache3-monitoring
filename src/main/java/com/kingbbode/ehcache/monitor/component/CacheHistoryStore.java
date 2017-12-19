@@ -1,14 +1,15 @@
 package com.kingbbode.ehcache.monitor.component;
 
-import com.kingbbode.ehcache.monitor.dto.CacheHistory;
+import com.kingbbode.ehcache.monitor.utils.DateTimeUtils;
+import com.kingbbode.ehcache.monitor.utils.RemoteUtils;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.terracotta.statistics.archive.Timestamped;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 @Component
 public class CacheHistoryStore {
     private static DateTimeFormatter FORMATTER_FOR_GROUPING = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private final Map<String, Map<String, CacheHistory>> storage;
+    private final Map<String, Map<String, Timestamped<Long>>> storage;
     private final CacheManager cacheManager;
 
     @Autowired
@@ -30,47 +31,83 @@ public class CacheHistoryStore {
         this.cacheManager = ((EhCacheCacheManager) cacheManager).getCacheManager();
     }
 
-    @Scheduled(fixedDelay = 1000 * 40)
+    @Scheduled(cron = "0 * * * * *")
     public void fetch() {
+        Long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         Arrays.stream(this.cacheManager.getCacheNames())
                 .map(this.cacheManager::getCache)
-                .forEach(this::saveCache);
+                .forEach(cache -> saveCache(cache, timestamp));
     }
 
-    private void saveCache(Cache cache) {
+    private void saveCache(Cache cache, Long timestamp) {
+        saveLocalCache(cache);
+        //saveRemoteCache(cache, timestamp);
+    }
+
+    private void saveRemoteCache(Cache cache, Long timestamp) {
+        Map<String, Timestamped<Long>> map = this.storage.getOrDefault(cache.getName(), new HashMap<>());
+        String latestKey = DateTimeUtils.ofPattern(timestamp, FORMATTER_FOR_GROUPING);
+        TimestampedWrap latest = new TimestampedWrap(map.getOrDefault(latestKey, new TimestampedWrap(timestamp)));
+        latest.add(RemoteUtils.sumRemoteElementHitCount(cacheManager, cache));
+        map.put(latestKey, latest);
+        this.storage.put(cache.getName(), map);
+    }
+
+    private void saveLocalCache(Cache cache) {
         cache.getStatistics().cacheHitOperation().count().history()
                 .stream()
-                .map(CacheHistory::new)
                 .collect(Collectors.groupingBy(
-                        o -> ofPatternForGrouping(o.getTimestamp())
+                        o -> DateTimeUtils.ofPattern(o.getTimestamp(), FORMATTER_FOR_GROUPING)
                 ))
                 .values()
                 .stream()
-                .map(list -> list.stream().sorted(Comparator.reverseOrder()).findFirst().orElse(null))
+                .map(list -> list.stream().max(Comparator.comparingLong(Timestamped::getTimestamp)).orElse(null))
                 .filter(Objects::nonNull)
                 .forEach(cacheHistory -> {
-                    Map<String, CacheHistory> map = this.storage.getOrDefault(cache.getName(), new HashMap<>());
-                    map.put(ofPatternForGrouping(cacheHistory.getTimestamp()), cacheHistory);
-                    if(map.size()>3) {
-                        String removeKey = map.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getValue)).map(Map.Entry::getKey).findFirst().orElse("");
+                    Map<String, Timestamped<Long>> map = this.storage.getOrDefault(cache.getName(), new HashMap<>());
+                    map.put(DateTimeUtils.ofPattern(cacheHistory.getTimestamp(), FORMATTER_FOR_GROUPING), cacheHistory);
+                    if (map.size() > 3) {
+                        String removeKey = map.entrySet().stream().max(Comparator.comparingLong(o -> o.getValue().getTimestamp())).map(Map.Entry::getKey).orElse("");
                         map.remove(removeKey);
                     }
                     this.storage.put(cache.getName(), map);
                 });
     }
 
-    private String ofPatternForGrouping(Long time) {
-        return toLocalDateTime(time).format(FORMATTER_FOR_GROUPING);
-    }
-
-    private LocalDateTime toLocalDateTime(Long time) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
-    }
-
-    public List<CacheHistory> get(String name) {
+    public List<Timestamped<Long>> get(String name) {
         return this.storage.getOrDefault(name, Collections.emptyMap())
                 .values().stream()
-                .sorted(CacheHistory::compareTo)
+                .sorted(Comparator.comparingLong(Timestamped::getTimestamp))
                 .collect(Collectors.toList());
+    }
+
+    private class TimestampedWrap implements Timestamped<Long> {
+
+        TimestampedWrap(Long timestamp) {
+            this.sample = 0L;
+            this.timestamp = timestamp;
+        }
+
+        TimestampedWrap(Timestamped<Long> timestamped) {
+            this.sample = timestamped.getSample();
+            this.timestamp = timestamped.getTimestamp();
+        }
+
+        private Long sample;
+        private Long timestamp;
+
+        @Override
+        public Long getSample() {
+            return sample;
+        }
+
+        @Override
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        void add(Long sample) {
+            this.sample += sample;
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.kingbbode.ehcache.monitor.ui.view.component;
 
+import com.kingbbode.ehcache.monitor.utils.DateTimeUtils;
 import com.vaadin.event.ShortcutAction;
 import com.vaadin.event.ShortcutListener;
 import com.vaadin.icons.VaadinIcons;
@@ -13,9 +14,6 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import org.springframework.util.StringUtils;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -41,12 +39,12 @@ public class CacheDetailComponent extends CustomComponent implements View {
 
     private void init(String name) {
         this.ehcache = this.cacheManager.getCache(name);
-        this.infoGrid = createCacheInfoGrid(this.ehcache);
-        this.detailGrid = createDetailGrid(this.ehcache);
+        this.infoGrid = createCacheInfoGrid();
+        this.detailGrid = createDetailGrid();
         this.searchTextField = createSearchTextField();
         VerticalLayout content = new VerticalLayout();
         content.addComponent(createTitleBar());
-        content.addComponent(createControlBar(this.ehcache));
+        content.addComponent(createControlBar());
         content.addComponent(this.infoGrid);
         content.addComponent(this.detailGrid);
         setSizeFull();
@@ -56,7 +54,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
     private TextField createSearchTextField() {
         TextField textField = new TextField();
         textField.addShortcutListener(new ShortcutListener("Enter Keyword",
-                ShortcutAction.KeyCode.ENTER, null) {
+                ShortcutAction.KeyCode.ENTER, new int[]{}) {
             @Override
             public void handleAction(Object sender, Object target) {
                 searchAction();
@@ -74,11 +72,11 @@ public class CacheDetailComponent extends CustomComponent implements View {
         return titleBar;
     }
 
-    private HorizontalLayout createControlBar(Cache cache) {
+    private HorizontalLayout createControlBar() {
         HorizontalLayout controlBar = new HorizontalLayout();
         controlBar.addComponent(new Button("Refresh", (Button.ClickListener) event -> refresh()));
         controlBar.addComponent(new Button("Flush", (Button.ClickListener) event -> {
-            cache.flush();
+            this.ehcache.removeAll();
             refresh();
         }));
         controlBar.addComponent(createSearchBox());
@@ -97,7 +95,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
         return horizontalLayout;
     }
 
-    private Grid<Cache> createCacheInfoGrid(Cache origianlCache) {
+    private Grid<Cache> createCacheInfoGrid() {
         Grid<Cache> grid = new Grid<>();
         grid.addColumn(Cache::getName).setCaption("Name");
         grid.addColumn(cache -> ((Double) (((double) cache.getStatistics().cacheHitCount()) / ((double) (cache.getStatistics().cacheMissCount() + cache.getStatistics().cacheHitCount())) * 100)).intValue() + "%").setCaption("Hit Ratio");
@@ -109,35 +107,36 @@ public class CacheDetailComponent extends CustomComponent implements View {
         grid.addColumn(cache -> cache.getStatistics().cacheHitCount()).setCaption("hit");
         grid.addColumn(cache -> cache.getStatistics().cacheMissExpiredCount()).setCaption("miss : Expire");
         grid.addColumn(cache -> cache.getStatistics().cacheMissNotFoundCount()).setCaption("miss : Not Found");
-        grid.setItems(Collections.singletonList(origianlCache));
+        grid.setItems(Collections.singletonList(this.ehcache));
         grid.setWidth("100%");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.setHeightByRows(1);
         return grid;
     }
 
-    private Grid<Element> createDetailGrid(Cache ehcache) {
+    private Grid<Element> createDetailGrid() {
+        //Map<Object, Long> hitCounts = RemoteUtils.listRemoteElementHitCount(this.cacheManager, this.ehcache);
         Grid<Element> grid = new Grid<>();
         grid.addColumn(Element::getObjectKey).setCaption("Name");
         grid.addColumn(Element::getObjectValue).setCaption("Value");
-        grid.addColumn(element -> toPattern(element.getCreationTime())).setCaption("Create Time");
-        grid.addColumn(element -> toPattern(element.getLastAccessTime())).setCaption("Access Time");
-        grid.addColumn(element -> toPattern(element.getLastUpdateTime())).setCaption("Update Time");
+        grid.addColumn(element -> DateTimeUtils.ofPattern(element.getCreationTime(), FORMATTER)).setCaption("Create Time");
+        grid.addColumn(element -> DateTimeUtils.ofPattern(element.getLastAccessTime(), FORMATTER)).setCaption("Access Time");
+        grid.addColumn(element -> DateTimeUtils.ofPattern(element.getLastUpdateTime(), FORMATTER)).setCaption("Update Time");
         grid.addColumn(Element::getVersion).setCaption("Version");
         grid.addColumn(Element::getHitCount).setCaption("Hit");
         grid.addColumn(element -> {
             Button button = new Button(VaadinIcons.TRASH);
             button.addClickListener(event -> {
-                ehcache.remove(element.getObjectKey());
+                this.ehcache.remove(element.getObjectKey());
                 refresh();
             });
             return button;
-            }, new ComponentRenderer()).setCaption("");
-        grid.setItems(ehcache.getAll(getKeys(ehcache, SEARCH_DEFAULT)).values());
+        }, new ComponentRenderer()).setCaption("");
+        grid.setItems(this.ehcache.getAll(getKeys(this.ehcache, SEARCH_DEFAULT)).values());
         grid.setWidth("100%");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
-        int ehcacheSize = ehcache.getKeys().size();
-        if(ehcacheSize != 0) {
+        int ehcacheSize = this.ehcache.getKeys().size();
+        if (ehcacheSize != 0) {
             grid.setHeightByRows(ehcacheSize > 10 ? 10 : ehcacheSize);
         }
         return grid;
@@ -146,24 +145,16 @@ public class CacheDetailComponent extends CustomComponent implements View {
     @SuppressWarnings("unchecked")
     private List<?> getKeys(Cache ehcache, String keyword) {
         return (List<?>) ehcache.getKeys()
-                    .stream()
-                    .filter(o -> o instanceof String )
-                    .filter(o -> ((String)o).contains(keyword))
-                    .collect(Collectors.toList());
-    }
-
-    private String toPattern(Long time) {
-        return toLocalDateTime(time).format(FORMATTER);
-    }
-
-    private LocalDateTime toLocalDateTime(Long time) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
+                .stream()
+                .filter(o -> o instanceof String)
+                .filter(o -> ((String) o).contains(keyword))
+                .collect(Collectors.toList());
     }
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         String cacheName = event.getParameterMap().getOrDefault(Menu.CACHE_PARAMETER_KEY, "");
-        if("".equals(cacheName)) {
+        if ("".equals(cacheName)) {
             event.getNavigator().navigateTo(cacheName);
             return;
         }
@@ -190,7 +181,7 @@ public class CacheDetailComponent extends CustomComponent implements View {
 
     private void searchAction() {
         String value = this.searchTextField.getValue();
-        if(StringUtils.isEmpty(value)) {
+        if (StringUtils.isEmpty(value)) {
             return;
         }
         this.detailGrid.setItems(ehcache.getAll(getKeys(ehcache, value)).values());
