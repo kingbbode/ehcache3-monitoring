@@ -30,7 +30,7 @@ public class CacheHistoryStore {
         this.cacheManager = ((EhCacheCacheManager) cacheManager).getCacheManager();
     }
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "15,45 * * * * *")
     public void fetch() {
         Arrays.stream(this.cacheManager.getCacheNames())
                 .map(this.cacheManager::getCache)

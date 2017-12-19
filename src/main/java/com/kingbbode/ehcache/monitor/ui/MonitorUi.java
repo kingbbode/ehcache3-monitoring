@@ -46,6 +46,7 @@ public class MonitorUi extends UI implements ViewChangeListener{
         initNavigator();
         setContent(createLayout());
         setSizeFull();
+        addStyleName("v-scrollable");
     }
 
     private void initStyle() {
@@ -65,7 +66,8 @@ public class MonitorUi extends UI implements ViewChangeListener{
         layout.addComponent(this.container);
         layout.setExpandRatio(this.container, 1);
         layout.setSizeFull();
-        layout.setSpacing(false);
+        layout.setSpacing(true);
+        layout.setHeight(3000, Unit.PIXELS);
         return layout;
     }
 
@@ -78,7 +80,6 @@ public class MonitorUi extends UI implements ViewChangeListener{
         CssLayout viewContainer = new CssLayout();
         viewContainer.addStyleName("valo-content");
         viewContainer.setSizeFull();
-        viewContainer.setHeight(null);
         this.container =  viewContainer;
     }
 
